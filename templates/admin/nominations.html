@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% set header = "Review Nominations" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Pending Nominations</h3>
+    <div class="text-muted small">Approve nominations so candidates appear on ballots for that office.</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('admin.dashboard') }}">Back to Dashboard</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="fw-semibold">Queue</div>
+    <div class="text-muted small">{{ pending|length }} pending</div>
+  </div>
+
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      {% for n in pending %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="w-100">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="fw-semibold">{{ n.office.name }}</div>
+                <span class="badge bg-warning text-dark">Pending</span>
+                <span class="text-muted small">
+                  • {{ n.created_at.strftime('%b %d, %Y %I:%M %p').lstrip('0') }}
+                </span>
+              </div>
+
+              <div class="small text-muted mt-1">
+                Candidate: <strong>{{ n.candidate.full_name }}</strong> • {{ n.candidate.phone }}
+                {% if n.candidate.city or n.candidate.state %}
+                  • {{ n.candidate.city or "" }}{% if n.candidate.city and n.candidate.state %}, {% endif %}{{ n.candidate.state or "" }}
+                {% endif %}
+              </div>
+
+              {% if n.statement %}
+                <div class="small text-muted mt-2">📝 {{ n.statement }}</div>
+              {% endif %}
+
+              {% if n.nominated_by_name or n.nominated_by_phone %}
+                <div class="small text-muted mt-1">
+                  Nominator: {{ n.nominated_by_name or "—" }}
+                  {% if n.nominated_by_phone %} • {{ n.nominated_by_phone }}{% endif %}
+                </div>
+              {% endif %}
+
+              <div class="small text-muted mt-2">
+                Objections filed: <strong>{{ objection_counts.get(n.id, 0) }}</strong>
+                {% if objection_counts.get(n.id, 0) > 0 %}
+                  <span class="ms-2">
+                    (Review in objections section before approving if needed.)
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="d-flex flex-column gap-2 flex-shrink-0">
+              <form method="post" action="{{ url_for('admin.approve_nomination', nomination_id=n.id) }}">
+                <button class="btn btn-sm btn-success w-100" type="submit">Approve</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.reject_nomination', nomination_id=n.id) }}">
+                <button class="btn btn-sm btn-outline-danger w-100" type="submit">Reject</button>
+              </form>
+            </div>
+          </div>
+        </li>
+      {% else %}
+        <li class="list-group-item text-muted">No pending nominations.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+{% endblock %}

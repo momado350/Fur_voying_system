@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% set header = "Candidate Dashboard" %}
+{% block content %}
+
+<div class="row g-3">
+
+  <!-- LEFT: Nominate -->
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <div class="fw-semibold">Nominate for an Office</div>
+          <div class="text-muted small">Choose an office, optionally add a statement and nominator info.</div>
+        </div>
+      </div>
+
+      <div class="card-body">
+
+        {% if current_user.candidate_status != 'approved' or not current_user.is_roster_member %}
+          <div class="alert alert-warning mb-3">
+            <div class="fw-semibold">You can’t nominate yet.</div>
+            <div class="small">
+              Status required:
+              <ul class="mb-0">
+                <li>Candidate approval: <strong>Approved</strong></li>
+                <li>Roster verification: <strong>Yes</strong></li>
+              </ul>
+              Please wait for the Election Committee to approve/verify you.
+            </div>
+          </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('candidate.nominate') }}">
+          {{ form.hidden_tag() }}
+
+          <div class="row g-2">
+            <div class="col-md-12">
+              {{ form.office_id.label(class="form-label") }}
+              {{ form.office_id(class="form-select") }}
+              <div class="form-text">You can nominate for each office once.</div>
+            </div>
+
+            <div class="col-md-12">
+              {{ form.statement.label(class="form-label") }}
+              {{ form.statement(class="form-control", rows="3", placeholder="Optional: short statement about your intent / qualifications...") }}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.nominated_by_name.label(class="form-label") }}
+              {{ form.nominated_by_name(class="form-control", placeholder="Optional") }}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.nominated_by_phone.label(class="form-label") }}
+              {{ form.nominated_by_phone(class="form-control", placeholder="Optional") }}
+            </div>
+          </div>
+
+          <button
+            class="btn btn-primary mt-3 w-100"
+            type="submit"
+            {% if current_user.candidate_status != 'approved' or not current_user.is_roster_member %}disabled{% endif %}
+          >
+            Submit Nomination
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: My nominations -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="fw-semibold">My Nominations</div>
+        <div class="text-muted small">{{ nominations|length }} total</div>
+      </div>
+
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for n in nominations %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="fw-semibold">{{ n.office.name }}</div>
+                  <div class="small text-muted">
+                    Submitted: {{ n.created_at.strftime('%b %d, %Y %I:%M %p').lstrip('0') }}
+                  </div>
+                </div>
+
+                {% if n.status == 'approved' %}
+                  <span class="badge bg-success">Approved</span>
+                {% elif n.status == 'rejected' %}
+                  <span class="badge bg-danger">Rejected</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark">Pending</span>
+                {% endif %}
+              </div>
+
+              {% if n.statement %}
+                <div class="small text-muted mt-2">📝 {{ n.statement }}</div>
+              {% endif %}
+
+              {% if n.nominated_by_name or n.nominated_by_phone %}
+                <div class="small text-muted mt-1">
+                  Nominator:
+                  {{ n.nominated_by_name or "—" }}
+                  {% if n.nominated_by_phone %} • {{ n.nominated_by_phone }}{% endif %}
+                </div>
+              {% endif %}
+            </li>
+          {% else %}
+            <li class="list-group-item text-muted">No nominations yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

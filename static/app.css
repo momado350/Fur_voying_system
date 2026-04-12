@@ -1,0 +1,50 @@
+:root{
+  --hero1:#0b1220;
+  --hero2:#111a2e;
+  --glow:#2dd4bf;
+}
+body{
+  background: linear-gradient(180deg, #070b14 0%, #0b1220 30%, #0f172a 100%);
+}
+.hero{
+  background: radial-gradient(1200px 400px at 10% 0%, rgba(45,212,191,0.18), transparent 60%),
+              radial-gradient(1200px 400px at 90% 10%, rgba(59,130,246,0.18), transparent 60%),
+              linear-gradient(180deg, var(--hero1), var(--hero2));
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.card{
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 1rem;
+}
+.card-header{
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.table{
+  margin-bottom: 0;
+}
+.badge{
+  border-radius: 999px;
+}
+.btn-primary{
+  box-shadow: 0 10px 20px rgba(59,130,246,0.15);
+}
+
+/* HERO HEADER ONLY — does not affect rest of site */
+
+.hero{
+  background: linear-gradient(135deg,#0f172a,#1e293b);
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  color:white;
+}
+
+.hero-subtitle{
+  font-size:.8rem;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:rgba(255,255,255,0.7);
+}
+
+.hero h1{
+  font-weight:600;
+}

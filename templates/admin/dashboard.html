@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% set header = "Admin / Committee Dashboard" %}
+{% block content %}
+
+<div class="row g-3">
+
+  <!-- LEFT COLUMN -->
+  <div class="col-lg-4">
+
+    <!-- Pending Voters -->
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Pending Voters</div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for u in pending_voters %}
+            <li class="list-group-item">
+              <div class="fw-semibold">{{ u.full_name }}</div>
+              <div class="small text-muted">{{ u.phone }}{% if u.city or u.state %} • {{ u.city }}, {{ u.state }}{% endif %}</div>
+
+              <div class="d-flex gap-2 mt-2">
+                <form method="post" action="{{ url_for('admin.approve_voter', user_id=u.id) }}">
+                  <button class="btn btn-sm btn-success" type="submit">Approve</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.reject_voter', user_id=u.id) }}">
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Reject</button>
+                </form>
+              </div>
+            </li>
+          {% else %}
+            <li class="list-group-item text-muted">No pending voters.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <!-- Pending Candidates -->
+    <div class="card shadow-sm mt-3">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span>Pending Candidates</span>
+
+        {# IMPORTANT: in the cleaned admin.py I gave you, endpoint is admin.nominations_queue #}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.nominations_queue') }}">
+          Review Nominations
+        </a>
+      </div>
+
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for u in pending_candidates %}
+            <li class="list-group-item">
+              <div class="fw-semibold">{{ u.full_name }}</div>
+              <div class="small text-muted">{{ u.phone }}{% if u.city or u.state %} • {{ u.city }}, {{ u.state }}{% endif %}</div>
+
+              <div class="d-flex flex-wrap gap-2 mt-2">
+                <form method="post" action="{{ url_for('admin.roster_yes', user_id=u.id) }}">
+                  <button class="btn btn-sm btn-outline-primary" type="submit">Roster ✓</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.roster_no', user_id=u.id) }}">
+                  <button class="btn btn-sm btn-outline-secondary" type="submit">Roster ✕</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.approve_candidate', user_id=u.id) }}">
+                  <button class="btn btn-sm btn-success" type="submit">Approve</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.reject_candidate', user_id=u.id) }}">
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Reject</button>
+                </form>
+              </div>
+
+              <div class="small text-muted mt-2">
+                Resume:
+                {% if u.resume_path %}
+                  <code class="d-inline-block text-truncate" style="max-width: 100%;"><a href="{{ file_url(u.resume_path, download=True) }}" target="_blank" rel="noopener">open resume</a></code>
+                {% else %}
+                  <span class="text-muted">none</span>
+                {% endif %}
+                <br>
+                Photo:
+                {% if u.photo_path %}
+                  <code class="d-inline-block text-truncate" style="max-width: 100%;"><a href="{{ file_url(u.photo_path) }}" target="_blank" rel="noopener">open photo</a></code>
+                {% else %}
+                  <span class="text-muted">none</span>
+                {% endif %}
+              </div>
+            </li>
+          {% else %}
+            <li class="list-group-item text-muted">No pending candidates.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="col-lg-8">
+
+    <!-- Open Poll Session -->
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="fw-semibold">Open Poll Session</div>
+        <div class="text-muted small">One at a time (recommended)</div>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin.start_session') }}">
+          {{ form.hidden_tag() }}
+          <div class="row g-2 align-items-end">
+            <div class="col-md-8">
+              {{ form.office_id.label(class="form-label") }}
+              {{ form.office_id(class="form-select") }}
+            </div>
+            <div class="col-md-4">
+              {{ form.duration_seconds.label(class="form-label") }}
+              {{ form.duration_seconds(class="form-control") }}
+              <div class="form-text">Default: 300s (5 minutes). Runoff: 120s is auto-created on tie.</div>
+            </div>
+          </div>
+          <button class="btn btn-primary mt-3" type="submit">{{ form.submit.label.text }}</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    <div class="card shadow-sm mt-3">
+      <div class="card-header fw-semibold">Recent Sessions</div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for s in sessions %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-semibold">{{ s.office.name }}</div>
+                <div class="small text-muted">
+                  Round {{ s.round_number }}{% if s.is_runoff %} (Runoff){% endif %}
+                  • {{ s.status|upper }}
+                  {% if s.start_time %} • Started {{ s.start_time.strftime('%b %d %I:%M %p') }}{% endif %}
+                </div>
+              </div>
+              <div class="text-end">
+                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('election.session_results', session_id=s.id) }}">Results</a>
+              </div>
+            </li>
+          {% else %}
+            <li class="list-group-item text-muted">No sessions yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-0">
+
+      <!-- Offices -->
+      <div class="col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="fw-semibold">Offices</div>
+
+            {# create_office is POST, so "Manage" should just scroll to create form or you need an offices page.
+               For now: keep manage button disabled or link nowhere. If you want, I'll add /admin/offices GET page. #}
+            <span class="text-muted small">Create below</span>
+          </div>
+
+          <div class="card-body">
+            <form method="post" action="{{ url_for('admin.create_office') }}" class="row g-2 align-items-end">
+              {{ office_form.hidden_tag() }}
+              <div class="col-8">
+                {{ office_form.name.label(class="form-label") }}
+                {{ office_form.name(class="form-control", placeholder="Office name") }}
+              </div>
+              <div class="col-4">
+                {{ office_form.sort_order.label(class="form-label") }}
+                {{ office_form.sort_order(class="form-control") }}
+              </div>
+              <div class="col-12">
+                <button class="btn btn-sm btn-outline-primary" type="submit">Create Office</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card-body p-0 border-top">
+            <ul class="list-group list-group-flush">
+              {% for o in offices %}
+                <li class="list-group-item d-flex justify-content-between">
+                  <div>{{ o.name }}</div>
+                  <div class="text-muted small">Order: {{ o.sort_order }}</div>
+                </li>
+              {% else %}
+                <li class="list-group-item text-muted">No offices yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Objections -->
+      <div class="col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="fw-semibold">Pending Objections</div>
+
+            {# Use a real endpoint.
+               If you did NOT implement objections.queue, change this to objections.file or the real review endpoint. #}
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('objections.queue') }}">Review</a>
+          </div>
+          <div class="card-body">
+            <div class="text-muted small">
+              Use the objections page to uphold/dismiss objections with notes.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% set header = "Election Status" %}
+{% block content %}
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="fw-semibold">Offices</div>
+        <div class="text-muted small">{{ offices|length }} total</div>
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for o in offices %}
+            {% set r = results.get(o.id) %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-semibold">{{ o.name }}</div>
+                {% if r and r.winner %}
+                  <div class="small text-muted">Winner: <strong>{{ r.winner.full_name }}</strong></div>
+                {% else %}
+                  <div class="small text-muted">Not decided yet</div>
+                {% endif %}
+              </div>
+              {% if r and r.winner %}
+                <span class="badge text-bg-success">Complete</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Pending</span>
+              {% endif %}
+            </li>
+          {% else %}
+            <li class="list-group-item text-muted">No offices configured yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Live Poll</div>
+      <div class="card-body">
+        {% if active_session %}
+          <div class="mb-2">
+            <div class="fw-semibold">{{ active_session.office.name }}</div>
+            <div class="text-muted small">
+              Round {{ active_session.round_number }}{% if active_session.is_runoff %} (Runoff){% endif %}
+              • Ends at {{ active_session.end_time.strftime('%b %d, %Y %I:%M:%S %p') }}
+            </div>
+          </div>
+          {% if current_user.is_authenticated and current_user.role == 'voter' %}
+            <a class="btn btn-primary w-100" href="{{ url_for('voter.session_view', session_id=active_session.id) }}">Vote now</a>
+          {% else %}
+            <a class="btn btn-outline-primary w-100" href="{{ url_for('auth.login') }}">Login as voter to vote</a>
+          {% endif %}
+          <a class="btn btn-link w-100 mt-2" href="{{ url_for('election.session_results', session_id=active_session.id) }}">View results (live)</a>
+        {% else %}
+          <div class="text-muted">No poll session is running right now.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mt-3">
+      <div class="card-header fw-semibold">How it works</div>
+      <div class="card-body small text-muted">
+        <ol class="mb-0">
+          <li>Register as a voter → committee approves.</li>
+          <li>Candidates apply → roster verified + approved.</li>
+          <li>Committee opens polls one office at a time.</li>
+          <li>Ties trigger a runoff session automatically.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

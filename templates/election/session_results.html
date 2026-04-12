@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% set header = "Session Results" %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <div class="fw-semibold">{{ session.office.name }}</div>
+      <div class="small text-muted">Round {{ session.round_number }}{% if session.is_runoff %} (Runoff){% endif %}</div>
+    </div>
+    <div class="text-end">
+      <span class="badge text-bg-{% if session.status == 'running' %}success{% else %}secondary{% endif %}">
+        {{ session.status|upper }}
+      </span>
+      {% if current_user.is_authenticated and current_user.role in ['admin','committee'] and session.status == 'running' %}
+        <form method="post" action="{{ url_for('election.close_session', session_id=session.id) }}" class="d-inline">
+          <button class="btn btn-sm btn-outline-dark ms-2" type="submit">Close & Resolve</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th class="text-end">Votes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in ranked %}
+            <tr>
+              <td class="fw-semibold">{{ c.full_name }}</td>
+              <td class="text-end">{{ counts.get(c.id, 0) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if session.winner %}
+      <div class="alert alert-success mt-3">
+        Winner: <strong>{{ session.winner.full_name }}</strong>
+      </div>
+    {% elif session.status == 'running' %}
+      <div class="text-muted small">Results update live. Voting is still open.</div>
+    {% else %}
+      <div class="text-muted small">Session closed. If tied, committee should start the runoff session shown on Admin dashboard.</div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

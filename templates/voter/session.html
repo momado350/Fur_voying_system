@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% set header = "Cast your vote" %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <div class="fw-semibold">{{ session.office.name }}</div>
+      <div class="small text-muted">Round {{ session.round_number }}{% if session.is_runoff %} (Runoff){% endif %}</div>
+    </div>
+    <div class="text-end">
+      <div class="small text-muted">Time remaining</div>
+      <div class="fw-semibold" id="countdown">--:--</div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-lg-7">
+        <form method="post" action="{{ url_for('voter.cast_vote', session_id=session.id) }}">
+          {{ form.hidden_tag() }}
+          <div class="mb-2">
+            {{ form.candidate_id.label(class="form-label") }}
+            {{ form.candidate_id(class="form-select") }}
+          </div>
+          <button class="btn btn-primary w-100" type="submit">{{ form.submit.label.text }}</button>
+          <div class="small text-muted mt-2">After you vote, you will be redirected to results.</div>
+        </form>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="p-3 rounded-4 border bg-light-subtle">
+          <div class="fw-semibold mb-2">Candidates</div>
+          <div class="small text-muted">Tap a name above to vote. Candidate bio files are available to committee/admin.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const endISO = "{{ session.end_time.isoformat() }}Z";
+  const end = new Date(endISO).getTime();
+
+  function tick(){
+    const now = Date.now();
+    const diff = end - now;
+    const el = document.getElementById("countdown");
+    if(!el) return;
+
+    if(diff <= 0){
+      el.textContent = "00:00";
+      window.location.href = "{{ url_for('election.session_results', session_id=session.id) }}";
+      return;
+    }
+    const totalSec = Math.floor(diff/1000);
+    const m = String(Math.floor(totalSec/60)).padStart(2,"0");
+    const s = String(totalSec%60).padStart(2,"0");
+    el.textContent = `${m}:${s}`;
+  }
+
+  tick();
+  setInterval(tick, 1000);
+</script>
+{% endblock %}

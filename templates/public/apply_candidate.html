@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set header = "Candidate Application" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+
+          <div class="row g-2">
+            <div class="col-md-12">
+              {{ form.full_name.label(class="form-label") }}
+              {{ form.full_name(class="form-control") }}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.phone.label(class="form-label") }}
+              {{ form.phone(class="form-control", placeholder="Phone number (username)") }}
+              <div class="form-text">This phone number will be your login username.</div>
+            </div>
+
+            <div class="col-md-3">
+              {{ form.state.label(class="form-label") }}
+              {{ form.state(class="form-control") }}
+            </div>
+
+            <div class="col-md-3">
+              {{ form.city.label(class="form-label") }}
+              {{ form.city(class="form-control") }}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.password.label(class="form-label") }}
+              {{ form.password(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+              {{ form.confirm.label(class="form-label") }}
+              {{ form.confirm(class="form-control") }}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.resume.label(class="form-label") }}
+              {{ form.resume(class="form-control") }}
+              <div class="form-text">PDF/DOC/DOCX. Stored in S3 when production storage is enabled.</div>
+            </div>
+            <div class="col-md-6">
+              {{ form.photo.label(class="form-label") }}
+              {{ form.photo(class="form-control") }}
+              <div class="form-text">PNG/JPG/WebP. Stored in S3 when production storage is enabled.</div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary mt-3 w-100" type="submit">{{ form.submit.label.text }}</button>
+          <div class="small text-muted mt-2">Candidates must be roster-verified and approved before running for office.</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

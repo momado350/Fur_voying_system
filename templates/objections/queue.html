@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% set header = "Objections Queue" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Pending Objections</h3>
+    <div class="text-muted small">Committee/admin can uphold or dismiss objections with notes.</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('admin.dashboard') }}">Back to Admin</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="fw-semibold">Queue</div>
+    <div class="text-muted small">{{ objections|length }} pending</div>
+  </div>
+
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      {% for o in objections %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="w-100">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="fw-semibold">Objection #{{ o.id }}</div>
+                <span class="badge bg-warning text-dark">Pending</span>
+                <span class="text-muted small">• {{ o.created_at.strftime('%b %d, %Y %I:%M %p').lstrip('0') }}</span>
+              </div>
+
+              <div class="small text-muted mt-1">
+                Office: <strong>{{ o.nomination.office.name }}</strong>
+                • Candidate: <strong>{{ o.nomination.candidate.full_name }}</strong>
+                • Candidate phone: {{ o.nomination.candidate.phone }}
+              </div>
+
+              <div class="small mt-2">
+                <div class="fw-semibold">Reason</div>
+                <div class="text-muted">{{ o.reason }}</div>
+              </div>
+
+              {% if o.evidence %}
+                <div class="small mt-2">
+                  <div class="fw-semibold">Evidence</div>
+                  <div class="text-muted">{{ o.evidence }}</div>
+                </div>
+              {% endif %}
+
+              <div class="small text-muted mt-2">
+                Filed by:
+                {% if o.filed_by_user %}
+                  {{ o.filed_by_user.full_name }} ({{ o.filed_by_user.phone }})
+                {% else %}
+                  {{ o.filed_by_name or "—" }}{% if o.filed_by_phone %} ({{ o.filed_by_phone }}){% endif %}
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="flex-shrink-0" style="min-width:260px;">
+              <form method="post" action="{{ url_for('admin.uphold_objection', obj_id=o.id) }}" class="mb-2">
+                <label class="form-label small mb-1">Decision notes (optional)</label>
+                <textarea name="decision_notes" class="form-control form-control-sm" rows="2"></textarea>
+                <button class="btn btn-sm btn-success w-100 mt-2" type="submit">Uphold (Block nomination)</button>
+              </form>
+
+              <form method="post" action="{{ url_for('admin.dismiss_objection', obj_id=o.id) }}">
+                <label class="form-label small mb-1">Decision notes (optional)</label>
+                <textarea name="decision_notes" class="form-control form-control-sm" rows="2"></textarea>
+                <button class="btn btn-sm btn-outline-danger w-100 mt-2" type="submit">Dismiss</button>
+              </form>
+            </div>
+
+          </div>
+        </li>
+      {% else %}
+        <li class="list-group-item text-muted">No pending objections.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+{% endblock %}

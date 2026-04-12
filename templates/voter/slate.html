@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set header = "Candidate Slate & Objections" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Candidate Slate</h3>
+    <div class="text-muted small">Review candidates by office. File an objection if there is a valid rule violation.</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('voter.dashboard') }}">Back</a>
+</div>
+
+{% for o in offices %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div class="fw-semibold">{{ o.name }}</div>
+      <div class="text-muted small">
+        {{ (by_office.get(o.id, [])|length) }} candidate(s)
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <ul class="list-group list-group-flush">
+        {% for n in by_office.get(o.id, []) %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold">{{ n.candidate.full_name }}</div>
+              <div class="small text-muted">
+                {{ n.candidate.city or "" }}{% if n.candidate.city and n.candidate.state %}, {% endif %}{{ n.candidate.state or "" }}
+                • {{ n.candidate.phone }}
+              </div>
+              {% if n.statement %}
+                <div class="small text-muted mt-1">📝 {{ n.statement }}</div>
+              {% endif %}
+            </div>
+
+            <a class="btn btn-sm btn-outline-danger"
+               href="{{ url_for('objections.file', nomination_id=n.id) }}">
+              File Objection
+            </a>
+          </li>
+        {% else %}
+          <li class="list-group-item text-muted">No approved nominations yet for this office.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endfor %}
+
+{% endblock %}

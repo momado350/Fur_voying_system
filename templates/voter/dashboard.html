@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% set header = "Voter Dashboard" %}
+{% block content %}
+
+<style>
+  .office-choice-btn {
+    text-align: left;
+    border-radius: 16px;
+    padding: 1rem;
+    border: 1px solid rgba(0,0,0,.08);
+    background: #fff;
+    width: 100%;
+    transition: all .18s ease;
+  }
+
+  .office-choice-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0,0,0,.08);
+    border-color: rgba(13,110,253,.35);
+  }
+
+  .office-choice-btn.active {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13,110,253,.12);
+  }
+
+  .office-panel {
+    display: none;
+  }
+
+  .office-panel.active {
+    display: block;
+  }
+
+  .candidate-photo {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,.08);
+    background: #f8f9fa;
+    flex: 0 0 72px;
+  }
+
+  .statement-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">My status</div>
+      <div class="card-body">
+        <span class="badge text-bg-{% if current_user.voter_status == 'approved' %}success{% elif current_user.voter_status == 'rejected' %}danger{% else %}warning{% endif %}">
+          {{ current_user.voter_status|capitalize }}
+        </span>
+        <div class="small text-muted mt-2">You can vote only after approval.</div>
+
+        {% if current_user.voter_status == 'approved' %}
+          <hr class="my-3">
+          <a class="btn btn-outline-danger w-100"
+             href="{{ url_for('voter.slate') }}">
+            Review Candidates & File Objections
+          </a>
+          <div class="form-text">
+            Use this only for valid rule violations. The committee will review and decide.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Current poll</div>
+      <div class="card-body">
+        {% if session %}
+          <div class="fw-semibold">{{ session.office.name }}</div>
+          <div class="small text-muted">Round {{ session.round_number }}{% if session.is_runoff %} (Runoff){% endif %}</div>
+          <div class="small text-muted">Ends at {{ session.end_time.strftime('%b %d, %Y %I:%M:%S %p') }}</div>
+          <a class="btn btn-primary mt-3 w-100" href="{{ url_for('voter.session_view', session_id=session.id) }}">Open ballot</a>
+          <a class="btn btn-link w-100 mt-1" href="{{ url_for('election.session_results', session_id=session.id) }}">View results</a>
+        {% else %}
+          <div class="text-muted">No poll is running right now.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+  <div class="card-header fw-semibold">Know the candidates by office</div>
+  <div class="card-body">
+    <div class="text-muted mb-3">
+      Select an office to view approved candidates, read their statements, and get ready for objections or voting.
+    </div>
+
+    <div class="row g-3 mb-4">
+      {% for o in offices %}
+        <div class="col-md-4 col-sm-6">
+          <button type="button"
+                  class="office-choice-btn {% if loop.first %}active{% endif %}"
+                  data-office-target="office-{{ o.id }}">
+            <div class="fw-semibold">{{ o.name }}</div>
+            <div class="small text-muted mt-1">
+              {{ by_office.get(o.id, [])|length }} candidate(s)
+            </div>
+          </button>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% for o in offices %}
+      <div class="office-panel {% if loop.first %}active{% endif %}" id="office-{{ o.id }}">
+        <div class="card border-0 bg-light">
+          <div class="card-body">
+            <h5 class="mb-3">{{ o.name }}</h5>
+
+            {% if by_office.get(o.id) %}
+              <div class="row g-3">
+                {% for n in by_office.get(o.id, []) %}
+                  <div class="col-lg-6">
+                    <div class="card shadow-sm h-100">
+                      <div class="card-body">
+                        <div class="d-flex align-items-start gap-3">
+                          {% if n.candidate.photo_path %}
+                            <img
+                            src="{{ file_url(n.candidate.photo_path) }}"
+                              alt="{{ n.candidate.full_name }}"
+                              class="candidate-photo">
+                          {% else %}
+                            <div class="candidate-photo d-flex align-items-center justify-content-center text-muted small">
+                              No Photo
+                            </div>
+                          {% endif %}
+
+                          
+                          <div class="flex-grow-1">
+
+                            <div class="fw-semibold">{{ n.candidate.full_name }}</div>
+                          
+                            <div class="small text-muted">
+                              {{ n.candidate.city or "" }}{% if n.candidate.city and n.candidate.state %}, {% endif %}{{ n.candidate.state or "" }}
+                            </div>
+                          
+                            <div class="small text-muted">
+                              {{ n.candidate.phone }}
+                            </div>
+                          
+                            {% if n.candidate.resume_path %}
+                              <div class="mt-2">
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   target="_blank"
+                                   href="{{ file_url(n.candidate.resume_path, download=True) }}">
+                                   View Resume
+                                </a>
+                              </div>
+                            {% endif %}
+                          
+                          </div>
+
+                        </div>
+
+                        {% if n.statement %}
+                        <hr>
+                        <div class="small fw-semibold mb-1">Candidate Statement</div>
+                      
+                        <div class="small text-muted statement-preview" id="preview-{{ n.id }}">
+                          {{ n.statement }}
+                        </div>
+                      
+                        <div class="small text-muted statement-full d-none" id="full-{{ n.id }}">
+                          {{ n.statement }}
+                        </div>
+                      
+                        <a href="#"
+                           class="small"
+                           onclick="toggleStatement('{{ n.id }}'); return false;"
+                           id="toggle-{{ n.id }}">
+                           Read more
+                        </a>
+                      
+                      {% else %}
+                        <hr>
+                        <div class="small text-muted">No statement submitted yet.</div>
+                      {% endif %}
+
+                        {% if current_user.voter_status == 'approved' %}
+                          <a class="btn btn-sm btn-outline-danger mt-3"
+                             href="{{ url_for('objections.file', nomination_id=n.id) }}">
+                            File Objection
+                          </a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-muted">No approved nominations yet for this office.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const buttons = document.querySelectorAll(".office-choice-btn");
+    const panels = document.querySelectorAll(".office-panel");
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", function () {
+        const target = this.dataset.officeTarget;
+
+        buttons.forEach(b => b.classList.remove("active"));
+        panels.forEach(p => p.classList.remove("active"));
+
+        this.classList.add("active");
+        const panel = document.getElementById(target);
+        if (panel) panel.classList.add("active");
+      });
+    });
+  });
+
+  function toggleStatement(id) {
+
+const preview = document.getElementById("preview-" + id);
+const full = document.getElementById("full-" + id);
+const toggle = document.getElementById("toggle-" + id);
+
+if (full.classList.contains("d-none")) {
+  full.classList.remove("d-none");
+  preview.classList.add("d-none");
+  toggle.innerText = "Show less";
+} else {
+  full.classList.add("d-none");
+  preview.classList.remove("d-none");
+  toggle.innerText = "Read more";
+}
+}
+</script>
+{% endblock %}

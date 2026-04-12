@@ -1,0 +1,44 @@
+services:
+  - type: web
+    runtime: python
+    name: fur-online-voting-web
+    plan: starter
+    buildCommand: pip install -r requirements.txt && flask db upgrade
+    startCommand: gunicorn app:app
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fur-online-voting-db
+          property: connectionString
+      - key: STORAGE_BACKEND
+        value: s3
+      - key: AWS_S3_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_BUCKET_NAME
+        sync: false
+      - key: S3_PUBLIC_URL_BASE
+        sync: false
+      - key: S3_USE_PRESIGNED_URLS
+        value: "true"
+      - key: S3_PRESIGNED_TTL
+        value: "3600"
+      - key: S3_RESUME_PREFIX
+        value: resumes
+      - key: S3_PHOTO_PREFIX
+        value: photos
+
+databases:
+  - name: fur-online-voting-db
+    plan: starter
+    databaseName: fur_online_voting
+    user: fur_online_voting

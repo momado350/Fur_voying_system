@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set header = "Voter Dashboard" %}
+{% block content %}
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">My status</div>
+      <div class="card-body">
+        <span class="badge text-bg-{% if current_user.voter_status == 'approved' %}success{% elif current_user.voter_status == 'rejected' %}danger{% else %}warning{% endif %}">
+          {{ current_user.voter_status|capitalize }}
+        </span>
+        <div class="small text-muted mt-2">You can vote only after approval.</div>
+
+        {% if current_user.voter_status == 'approved' %}
+          <hr class="my-3">
+          <a class="btn btn-outline-danger w-100"
+             href="{{ url_for('voter.slate') }}">
+            Review Candidates & File Objections
+          </a>
+          <div class="form-text">
+            Use this only for valid rule violations. The committee will review and decide.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Current poll</div>
+      <div class="card-body">
+        {% if session %}
+          <div class="fw-semibold">{{ session.office.name }}</div>
+          <div class="small text-muted">Round {{ session.round_number }}{% if session.is_runoff %} (Runoff){% endif %}</div>
+          <div class="small text-muted">Ends at {{ session.end_time.strftime('%b %d, %Y %I:%M:%S %p') }}</div>
+          <a class="btn btn-primary mt-3 w-100" href="{{ url_for('voter.session_view', session_id=session.id) }}">Open ballot</a>
+          <a class="btn btn-link w-100 mt-1" href="{{ url_for('election.session_results', session_id=session.id) }}">View results</a>
+        {% else %}
+          <div class="text-muted">No poll is running right now.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
